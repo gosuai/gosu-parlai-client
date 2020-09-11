@@ -1,0 +1,8 @@
+__pycache__/
+*.idea/
+/.direnv/
+/.vscode/
+
+*.egg-info
+
+venv
