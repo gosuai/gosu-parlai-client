@@ -29,7 +29,6 @@ class ParlAiConnectionClosed(ParlAiException):
 
 class ParlAiClient:
     MAX_RETRIES = 3
-    RETRY_DELAY = 3
     RECEIVE_TIMEOUT = 30
 
     def __init__(self, parlai_host: str, session: ClientSession):
@@ -39,7 +38,6 @@ class ParlAiClient:
         self.ws = None
 
     async def __aenter__(self):
-        await self.connect()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -78,7 +76,7 @@ class ParlAiClient:
         for retry in range(self.MAX_RETRIES):
             try:
                 if not self.ws:
-                    self.ws = await self.connect()
+                    await self.connect()
                     response = await self._ask('\n'.join(self.history))
                 else:
                     response = await self._ask(text)
@@ -87,12 +85,10 @@ class ParlAiClient:
                 return response
             except Exception as e:
                 if retry >= self.MAX_RETRIES - 1:
-                    raise ParlAiException from e
+                    raise
                 else:
                     logger.debug(f'Error while asking ParlAI server response: {e}, retrying')
-                    if self.ws:
-                        await self.ws.close()
-                    await asyncio.sleep(self.RETRY_DELAY)
+                    await self.close()
 
 
 @asynccontextmanager
